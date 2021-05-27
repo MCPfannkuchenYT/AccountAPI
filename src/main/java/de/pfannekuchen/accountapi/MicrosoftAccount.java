@@ -1,6 +1,7 @@
 package de.pfannekuchen.accountapi;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,6 +16,9 @@ import de.pfannekuchen.accountapi.utils.Utils;
  */
 public final class MicrosoftAccount {
 
+	/** Cached Access Token for Microsoft Account */
+	private final String refreshToken;
+	
 	private final String accessToken;
 	private final String username;
 	private final UUID uuid;
@@ -40,22 +44,18 @@ public final class MicrosoftAccount {
 		
         /* Connect to Xbox live servers to obtain XSTS */
         String localToken = null;
+        String localRefreshToken = null;
         try {
-		    final String token = Utils.acquireAccessToken(authCode);
-		    final String xblToken = Utils.getXBLToken(token);
-		    final String xstsTokenJson = Utils.getXSTSToken(xblToken);
-
-		    // Parse 2 instead of 1 variables from JSON
-		    final String xstsToken = xstsTokenJson.split("Token\"")[1].split("\"")[1];
-		    final String uhs = xstsTokenJson.split("uhs\"")[1].split("\"")[1];
-		    
-		    localToken = Utils.getAccessToken(xstsToken, uhs);
+        	final String accessTokenResponse = Utils.acquireAccessToken(authCode);
+        	localToken = login(accessTokenResponse.split("access_token\"")[1].split("\"")[1]);
+        	localRefreshToken = accessTokenResponse.split("refresh_token\"")[1].split("\"")[1];
 		    s.getOutputStream().write("Login finished, you can close this page now! :)\r\n".getBytes(StandardCharsets.UTF_8));
 		} catch (Exception e) {
 			s.getOutputStream().write("Something went wrong! :(\r\n".getBytes(StandardCharsets.UTF_8));
 			e.printStackTrace();
 		}
         accessToken = localToken;
+        refreshToken = localRefreshToken;
         s.getOutputStream().flush();
         s.close();
         socket.close();
@@ -74,15 +74,57 @@ public final class MicrosoftAccount {
         uuid = UUID.fromString(profileJson.split("id\"")[1].split("\"")[1].replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
         username = profileJson.split("name\"")[1].split("\"")[1];
 	}
+
+	/**
+	 * Refresh an existing Account Token and create accounts from that.
+	 * Does not require a Web View
+	 * @param Account Token from older Log-in
+	 */
+	public MicrosoftAccount(final String refreshToken) throws Exception {
+		this.refreshToken = Utils.refreshAccessToken(refreshToken);
+		this.accessToken = login(this.refreshToken);
+		
+        /* Checking Game Ownership */
+        final String ownershipJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/entitlements/mcstore", null, false, "Authorization", "Bearer " + accessToken);
+        ownsMinecraft = !ownershipJson.replaceAll(" ", "").contains("[]");
+        if (!ownsMinecraft) {
+        	uuid = null;
+        	username = null;
+        	return;
+        }
+        
+        /* Checking the Profile */
+        final String profileJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/minecraft/profile", null, false, "Authorization", "Bearer " + accessToken);
+        uuid = UUID.fromString(profileJson.split("id\"")[1].split("\"")[1].replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
+        username = profileJson.split("name\"")[1].split("\"")[1];
+	}
+	
+	/**
+	 * Obtain Access Token, used from Constructors only
+	 * @return Access Token of Minecraft Account
+	 */
+	private final String login(final String localAccountToken) throws IOException {
+		final String xblToken = Utils.getXBLToken(localAccountToken);
+	    final String xstsTokenJson = Utils.getXSTSToken(xblToken);
+
+	    // Parse 2 instead of 1 variables from JSON
+	    final String xstsToken = xstsTokenJson.split("Token\"")[1].split("\"")[1];
+	    final String uhs = xstsTokenJson.split("uhs\"")[1].split("\"")[1];
+	    
+	    final String accessToken =  Utils.getAccessToken(xstsToken, uhs);
+	    return accessToken;
+	}
 	
 	/**
 	 * Private Constructor used for Cloning
 	 */
-	MicrosoftAccount(String accessToken, String username, UUID uuid, boolean ownsMinecraft) {
+	MicrosoftAccount(final String accessToken, final String username, final UUID uuid, final boolean ownsMinecraft, final String account) {
 		this.accessToken = accessToken;
 		this.username = username;
 		this.uuid = uuid;
 		this.ownsMinecraft = ownsMinecraft;
+		this.refreshToken = account;
+		System.out.println(account);
 	}
 	
 	/* Getters */
@@ -103,6 +145,11 @@ public final class MicrosoftAccount {
 		return ownsMinecraft;
 	}
 	
+	public final String getAccountToken() {
+		return refreshToken;
+	}
+
+	
 	/* General Java Stuff */
 	
 	/**
@@ -110,7 +157,7 @@ public final class MicrosoftAccount {
 	 */
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
-		return new MicrosoftAccount(accessToken, username, uuid, ownsMinecraft);
+		return new MicrosoftAccount(accessToken, username, uuid, ownsMinecraft, refreshToken);
 	}
 
 	/**

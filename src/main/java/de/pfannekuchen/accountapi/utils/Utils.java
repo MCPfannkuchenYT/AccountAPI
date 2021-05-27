@@ -88,7 +88,14 @@ public final class Utils {
 	 * Check README.md
 	 */
 	public static final String acquireAccessToken(final String authCode) throws Exception {
-		return sendAndRecieveJson("https://login.live.com/oauth20_token.srf?client_id=f825dd16-a6d5-44f8-ab1c-836af116bfa3&code=" + authCode + "&grant_type=authorization_code&redirect_uri=http://localhost:28562&scope=XboxLive.signin%20offline_access", null, true).split("access_token\"")[1].split("\"")[1];
+		return sendAndRecieveJson("https://login.live.com/oauth20_token.srf?client_id=f825dd16-a6d5-44f8-ab1c-836af116bfa3&code=" + authCode + "&grant_type=authorization_code&redirect_uri=http://localhost:28562&scope=XboxLive.signin%20offline_access", null, true);
+	}
+	
+	/**
+	 * Same as above, but for refreshing an existing Token
+	 */
+	public static final String refreshAccessToken(final String oldToken) throws Exception {
+		return sendAndRecieveJson("https://login.live.com/oauth20_token.srf?client_id=f825dd16-a6d5-44f8-ab1c-836af116bfa3&refresh_token=" + oldToken + "&grant_type=refresh_token&redirect_uri=http://localhost:28562&scope=XboxLive.signin%20offline_access", null, true).split("access_token\"")[1].split("\"")[1];
 	}
 	
 	/**
