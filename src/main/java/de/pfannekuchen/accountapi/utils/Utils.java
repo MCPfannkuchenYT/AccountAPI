@@ -5,28 +5,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.net.ssl.HttpsURLConnection;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 /**
  * This is where all the Magic happens, as an API-User you probably don't want to use any of this.
  * @author Pancake
  */
 public final class Utils {
-
-	/** JSON Parser */
-	public static final JSONParser parser = new JSONParser();
 	
 	/**
 	 * Method used to send Get or Post Requests to a server, and read the return as a JSON Object.
@@ -37,10 +26,10 @@ public final class Utils {
 	 * @return Returns the recieved JSON from the Server
 	 * @throws IOException Something went wrong or the Server responded with an Error
 	 */
-	public static final JSONObject sendAndRecieveJson(final String url, final JSONObject payload, final boolean isPost, final String... headers) throws IOException {
+	public static final String sendAndRecieveJson(final String url, final String payload, final boolean isPost, final String... headers) throws IOException {
 		/* Open a Connection to the Server */
 		final URL authServer = new URL(url);
-		final HttpsURLConnection con = (HttpsURLConnection) authServer.openConnection();
+		final HttpURLConnection con = (HttpURLConnection) authServer.openConnection();
 		
 		/* Set Headers*/
 		if (isPost) con.setRequestMethod("POST");
@@ -59,7 +48,7 @@ public final class Utils {
 			if (payload != null) {
 				// Send the JSON Object as Payload
 				try(final OutputStream os = con.getOutputStream()) {
-					final byte[] input = payload.toJSONString().getBytes("utf-8");
+					final byte[] input = payload.getBytes("utf-8");
 				    os.write(input, 0, input.length);			
 				}
 			} else {
@@ -78,12 +67,8 @@ public final class Utils {
 			while ((responseLine = br.readLine()) != null) {
 				response += responseLine.trim();
 			}
-			return (JSONObject) parser.parse(response);
-		} catch (ParseException e) {
-			System.err.println("Could not parse input.");
-			e.printStackTrace();
+			return response;
 		}
-		return null;
 	}
 	
 	/**
@@ -102,54 +87,29 @@ public final class Utils {
 	/**
 	 * Check README.md
 	 */
-	public static final JSONObject acquireAccessToken(final String authCode) throws Exception {
-		return sendAndRecieveJson("https://login.live.com/oauth20_token.srf?client_id=f825dd16-a6d5-44f8-ab1c-836af116bfa3&code=" + authCode + "&grant_type=authorization_code&redirect_uri=http://localhost:28562&scope=XboxLive.signin%20offline_access", null, true);
+	public static final String acquireAccessToken(final String authCode) throws Exception {
+		return sendAndRecieveJson("https://login.live.com/oauth20_token.srf?client_id=f825dd16-a6d5-44f8-ab1c-836af116bfa3&code=" + authCode + "&grant_type=authorization_code&redirect_uri=http://localhost:28562&scope=XboxLive.signin%20offline_access", null, true).split("access_token\"")[1].split("\"")[1];
 	}
 	
 	/**
 	 * Check README.md
 	 */
-	public static final JSONObject getXBLToken(final String accessToken) throws IOException {
-		final JSONObject properties = new JSONObject();
-        properties.put("AuthMethod", "RPS");
-        properties.put("SiteName", "user.auth.xboxlive.com");
-        properties.put("RpsTicket", "d=" + accessToken);
-
-        final JSONObject data = new JSONObject();
-        data.put("Properties", properties);
-        data.put("RelyingParty", "http://auth.xboxlive.com");
-        data.put("TokenType", "JWT");
-
-        return Utils.sendAndRecieveJson("https://user.auth.xboxlive.com/user/authenticate", data, true, "x-xbl-contract-version", "1");
+	public static final String getXBLToken(final String accessToken) throws IOException {
+        return sendAndRecieveJson("https://user.auth.xboxlive.com/user/authenticate", "{'Properties':{'AuthMethod':'RPS','SiteName':'user.auth.xboxlive.com','RpsTicket':'d=%TOKEN%'},'RelyingParty':'http://auth.xboxlive.com','TokenType':'JWT'}".replace("'", "\"").replaceAll("%TOKEN%", accessToken), true, "x-xbl-contract-version", "1").split("Token\"")[1].split("\"")[1];
 	}
 	
 	/**
 	 * Check README.md
 	 */
-	public static final JSONObject getXSTSToken(final String xblToken) throws IOException {
-		final JSONObject properties = new JSONObject();
-        properties.put("SandboxId", "RETAIL");
-        
-        final List<String> userToken = new ArrayList<String>();
-        userToken.add(xblToken);
-        properties.put("UserTokens", userToken);
-
-        final JSONObject data = new JSONObject();
-        data.put("Properties", properties);
-        data.put("RelyingParty", "rp://api.minecraftservices.com/");
-        data.put("TokenType", "JWT");
-
-        return Utils.sendAndRecieveJson("https://xsts.auth.xboxlive.com/xsts/authorize", data, true, "x-xbl-contract-version", "1");
+	public static final String getXSTSToken(final String xblToken) throws IOException {
+        return sendAndRecieveJson("https://xsts.auth.xboxlive.com/xsts/authorize", "{'Properties':{'SandboxId':'RETAIL','UserTokens':['%XBL%']},'RelyingParty':'rp://api.minecraftservices.com/','TokenType':'JWT'}".replace("'", "\"").replaceAll("%XBL%", xblToken), true, "x-xbl-contract-version", "1");
 	}
 	
 	/**
 	 * Check README.md
 	 */
-	public static final JSONObject getAccessToken(final JSONObject xstsToken) throws IOException {
-        final JSONObject data = new JSONObject();
-        data.put("identityToken", "XBL3.0 x=" + ((JSONObject) ((JSONArray) ((JSONObject) xstsToken.get("DisplayClaims")).get("xui")).get(0)).get("uhs") + ";" + xstsToken.get("Token"));
-
-        return Utils.sendAndRecieveJson("https://api.minecraftservices.com/authentication/login_with_xbox", data, true);
+	public static final String getAccessToken(final String xstsToken, final String hash) throws IOException {
+        return sendAndRecieveJson("https://api.minecraftservices.com/authentication/login_with_xbox", "{\"identityToken\":\"XBL3.0 x=" + hash + ";" + xstsToken + "\"}", true).split("access_token\"")[1].split("\"")[1];
 	}
 	
 }

@@ -1,4 +1,4 @@
-package de.pfannekuchen.accountapi.accounts;
+package de.pfannekuchen.accountapi;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -6,9 +6,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import de.pfannekuchen.accountapi.utils.Utils;
 
@@ -44,10 +41,15 @@ public final class MicrosoftAccount {
         /* Connect to Xbox live servers to obtain XSTS */
         String localToken = null;
         try {
-		    final JSONObject token = Utils.acquireAccessToken(authCode);
-		    final JSONObject xblToken = Utils.getXBLToken((String) token.get("access_token"));
-		    final JSONObject xstsToken = Utils.getXSTSToken((String) xblToken.get("Token"));
-		    localToken = (String) Utils.getAccessToken(xstsToken).get("access_token");
+		    final String token = Utils.acquireAccessToken(authCode);
+		    final String xblToken = Utils.getXBLToken(token);
+		    final String xstsTokenJson = Utils.getXSTSToken(xblToken);
+
+		    // Parse 2 instead of 1 variables from JSON
+		    final String xstsToken = xstsTokenJson.split("Token\"")[1].split("\"")[1];
+		    final String uhs = xstsTokenJson.split("uhs\"")[1].split("\"")[1];
+		    
+		    localToken = Utils.getAccessToken(xstsToken, uhs);
 		    s.getOutputStream().write("Login finished, you can close this page now! :)\r\n".getBytes(StandardCharsets.UTF_8));
 		} catch (Exception e) {
 			s.getOutputStream().write("Something went wrong! :(\r\n".getBytes(StandardCharsets.UTF_8));
@@ -59,9 +61,8 @@ public final class MicrosoftAccount {
         socket.close();
         
         /* Checking Game Ownership */
-        final JSONObject ownershipJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/entitlements/mcstore", null, false, "Authorization", "Bearer " + accessToken);
-        ownsMinecraft = ((JSONArray) ownershipJson.get("items")).size() > 0;
-        
+        final String ownershipJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/entitlements/mcstore", null, false, "Authorization", "Bearer " + accessToken);
+        ownsMinecraft = !ownershipJson.replaceAll(" ", "").contains("[]");
         if (!ownsMinecraft) {
         	uuid = null;
         	username = null;
@@ -69,9 +70,9 @@ public final class MicrosoftAccount {
         }
         
         /* Checking the Profile */
-        final JSONObject profileJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/minecraft/profile", null, false, "Authorization", "Bearer " + accessToken);
-        uuid = UUID.fromString(((String) profileJson.get("id")).replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
-        username = (String) profileJson.get("name");
+        final String profileJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/minecraft/profile", null, false, "Authorization", "Bearer " + accessToken);
+        uuid = UUID.fromString(profileJson.split("id\"")[1].split("\"")[1].replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
+        username = profileJson.split("name\"")[1].split("\"")[1];
 	}
 	
 	/**
