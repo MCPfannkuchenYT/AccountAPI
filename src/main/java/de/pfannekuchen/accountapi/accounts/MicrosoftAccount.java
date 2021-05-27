@@ -12,6 +12,10 @@ import org.json.simple.JSONObject;
 
 import de.pfannekuchen.accountapi.utils.Utils;
 
+/**
+ * This is an Implementation of the Microsoft Minecraft Account
+ * @author Pancake
+ */
 public final class MicrosoftAccount {
 
 	private final String accessToken;

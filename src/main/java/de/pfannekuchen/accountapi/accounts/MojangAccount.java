@@ -8,10 +8,12 @@ import org.json.simple.JSONObject;
 import de.pfannekuchen.accountapi.AccountAPI;
 import de.pfannekuchen.accountapi.utils.Utils;
 
+/**
+ * This is an Implementation of the old Mojang Minecraft Account
+ * @author Pancake
+ */
 public final class MojangAccount {
-
-	private static final String AUTHSERVER = "https://authserver.mojang.com/";
-
+	
 	private final String accessToken;
 	private final String username;
 	private final UUID uuid;
@@ -37,7 +39,7 @@ public final class MojangAccount {
 		/* Send Payload and Recieve new one */
 		JSONObject response = null;
 		try {
-			response = Utils.sendAndRecieveJson(AUTHSERVER + "authenticate", payload, true);
+			response = Utils.sendAndRecieveJson("https://authserver.mojang.com/authenticate", payload, true);
 			if (response.containsKey("error")) throw new Exception((String) response.get("error"));
 		} catch (final IOException e) {
 			System.err.println("Could not create Mojang Account.");
@@ -63,7 +65,7 @@ public final class MojangAccount {
 		/* Send Payload and Recieve new one */
 		JSONObject response = null;
 		try {
-			response = Utils.sendAndRecieveJson(AUTHSERVER + "refresh", payload, true);
+			response = Utils.sendAndRecieveJson("https://authserver.mojang.com/refresh", payload, true);
 			if (response.containsKey("error")) throw new Exception((String) response.get("error"));
 		} catch (final IOException e) {
 			System.err.println("Could not refresh Mojang Account.");
