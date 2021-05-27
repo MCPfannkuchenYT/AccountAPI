@@ -56,6 +56,7 @@ public final class MicrosoftAccount {
         accessToken = localToken;
         s.getOutputStream().flush();
         s.close();
+        socket.close();
         
         /* Checking Game Ownership */
         final JSONObject ownershipJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/entitlements/mcstore", null, false, "Authorization", "Bearer " + accessToken);
@@ -71,9 +72,17 @@ public final class MicrosoftAccount {
         final JSONObject profileJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/minecraft/profile", null, false, "Authorization", "Bearer " + accessToken);
         uuid = UUID.fromString(((String) profileJson.get("id")).replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
         username = (String) profileJson.get("name");
-        
 	}
 	
+	/**
+	 * Private Constructor used for Cloning
+	 */
+	MicrosoftAccount(String accessToken, String username, UUID uuid, boolean ownsMinecraft) {
+		this.accessToken = accessToken;
+		this.username = username;
+		this.uuid = uuid;
+		this.ownsMinecraft = ownsMinecraft;
+	}
 	
 	/* Getters */
 	
@@ -91,6 +100,40 @@ public final class MicrosoftAccount {
 
 	public final boolean ownsMinecraft() {
 		return ownsMinecraft;
+	}
+	
+	/* General Java Stuff */
+	
+	/**
+	 * Clones a Minecraft Account without Connecting to a Server again
+	 */
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		return new MicrosoftAccount(accessToken, username, uuid, ownsMinecraft);
+	}
+
+	/**
+	 * Create a Hash of the Player UUID
+	 */
+	@Override
+	public int hashCode() {
+		return uuid.hashCode();
+	}
+	
+	/**
+	 * Check whether two Accounts are equal
+	 */
+	@Override
+	public boolean equals(Object o) {
+		return o.hashCode() == hashCode();
+	}
+	
+	/**
+	 * To String support because why not
+	 */
+	@Override
+	public String toString() {
+		return uuid.toString();
 	}
 	
 }
