@@ -4,10 +4,13 @@ import java.util.UUID;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import de.pfannekuchen.accountapi.accounts.MojangAccount;
+
 public final class AccountAPI {
 
 	static UUID CLIENTUUID;
 	
+	// TODO: Get rid of this
 	public static void create() {
 		/* Try to Load or Generate a UUID for the Account API Client */
 		try {
@@ -20,13 +23,9 @@ public final class AccountAPI {
 			e.printStackTrace();
 		}
 	}
-	
-	public static final MojangAccount obtainMojangAccount(final String email, final String password) throws Exception {
-		return new MojangAccount(email, password);
-	}
-	
-	public static final MojangAccount obtainMojangAccount(final String authtoken) throws Exception {
-		return new MojangAccount(authtoken);
+
+	public static UUID getClientUUID() {
+		return CLIENTUUID;
 	}
 	
 }

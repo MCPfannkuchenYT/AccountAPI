@@ -4,9 +4,6 @@
 # Ignore Gradle build output directory
 build
 
-# Ignore Credentials hehe
-*.dat
-
 # Ignore Eclipse
 .settings
 bin

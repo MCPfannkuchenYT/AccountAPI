@@ -7,16 +7,9 @@ repositories {
     mavenCentral()
 }
 
+sourceCompatibility = targetCompatibility = "1.16";
+
 dependencies {
 	// JSON Library
-	implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
-
-	testImplementation group: 'junit', name: 'junit', version: '4.13'
-}
-
-test {
-    useJUnit()
-    testLogging {
-        showStandardStreams = true
-    }
+	implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1' // TODO: This shouldn't be required since it is being used almost never
 }

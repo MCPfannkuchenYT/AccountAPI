@@ -1,16 +1,18 @@
-package de.pfannekuchen.accountapi;
+package de.pfannekuchen.accountapi.accounts;
 
 import java.io.IOException;
 import java.util.UUID;
 
 import org.json.simple.JSONObject;
 
+import de.pfannekuchen.accountapi.AccountAPI;
+import de.pfannekuchen.accountapi.utils.Utils;
+
 public final class MojangAccount {
 
 	private static final String AUTHSERVER = "https://authserver.mojang.com/";
 
 	private final String accessToken;
-	private final String email; // Note: Refreshing an Account does not fill out this field
 	private final String username;
 	private final UUID uuid;
 	
@@ -20,7 +22,7 @@ public final class MojangAccount {
 	 * @param password Raw Password for Mojang Account
 	 * @throws Exception Throws an Exception when the Mojang Servers do
 	 */
-	MojangAccount(final String email, final String password) throws Exception {
+	public MojangAccount(final String email, final String password) throws Exception {
 		/* Create Payload */
 		final JSONObject payload = new JSONObject();
 		final JSONObject payload_agent = new JSONObject();
@@ -30,12 +32,12 @@ public final class MojangAccount {
 		payload.put("username", email);
 		payload.put("password", password);
 		payload.put("requestUser", true);
-		payload.put("clientToken", AccountAPI.CLIENTUUID.toString());
+		payload.put("clientToken", AccountAPI.getClientUUID().toString());
 		
 		/* Send Payload and Recieve new one */
 		JSONObject response = null;
 		try {
-			response = HTTPSUtils.sendAndRecieveJson(AUTHSERVER + "authenticate", payload);
+			response = Utils.sendAndRecieveJson(AUTHSERVER + "authenticate", payload, true);
 			if (response.containsKey("error")) throw new Exception((String) response.get("error"));
 		} catch (final IOException e) {
 			System.err.println("Could not create Mojang Account.");
@@ -43,7 +45,6 @@ public final class MojangAccount {
 		}
 		
 		this.accessToken = (String) response.get("accessToken");
-		this.email = (String) ((JSONObject) response.get("user")).get("username");
 		this.username = (String) ((JSONObject) response.get("selectedProfile")).get("name");
 		this.uuid = UUID.fromString(((String) ((JSONObject) response.get("selectedProfile")).get("id")).replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
 	}
@@ -53,16 +54,16 @@ public final class MojangAccount {
 	 * @param accessToken Access Token of a Minecraft Account
 	 * @throws Exception Throws an Exception when the Mojang Servers do
 	 */
-	MojangAccount(final String accessToken) throws Exception {
+	public MojangAccount(final String accessToken) throws Exception {
 		/* Create Payload */
 		final JSONObject payload = new JSONObject();
 		payload.put("accessToken", accessToken);
-		payload.put("clientToken", AccountAPI.CLIENTUUID.toString());
+		payload.put("clientToken", AccountAPI.getClientUUID().toString());
 		
 		/* Send Payload and Recieve new one */
 		JSONObject response = null;
 		try {
-			response = HTTPSUtils.sendAndRecieveJson(AUTHSERVER + "refresh", payload);
+			response = Utils.sendAndRecieveJson(AUTHSERVER + "refresh", payload, true);
 			if (response.containsKey("error")) throw new Exception((String) response.get("error"));
 		} catch (final IOException e) {
 			System.err.println("Could not refresh Mojang Account.");
@@ -70,26 +71,21 @@ public final class MojangAccount {
 		}
 		
 		this.accessToken = (String) response.get("accessToken");
-		this.email = null;
 		this.username = (String) ((JSONObject) response.get("selectedProfile")).get("name");
 		this.uuid = UUID.fromString(((String) ((JSONObject) response.get("selectedProfile")).get("id")).replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
 	}
 	
 	/* Getters */
 	
-	public String getAccessToken() {
+	public final String getAccessToken() {
 		return accessToken;
 	}
 
-	public String getEmail() {
-		return email;
-	}
-
-	public String getUsername() {
+	public final String getUsername() {
 		return username;
 	}
 
-	public UUID getUuid() {
+	public final UUID getUuid() {
 		return uuid;
 	}
 	
