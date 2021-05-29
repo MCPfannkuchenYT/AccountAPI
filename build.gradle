@@ -1,5 +1,40 @@
 plugins {
-    id 'java-library'
+    id 'application'
+    id 'maven-publish'
+}
+
+group = "de.pfannekuchen"
+version = "1.1.0-SNAPSHOT"
+archivesBaseName = "accountapi"
+
+application {
+    mainModule = 'AccountAPI'
 }
 
 sourceCompatibility = targetCompatibility = "1.16";
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'de.pfannekuchen'
+            artifactId = 'accountapi'
+            version = '1.1.0-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}
+
+// Hide Tasks
+project.getAllTasks(true).each { key, val -> 
+	val.each {
+		it.group = null
+	}	
+}
+tasks.getByName("build").group = "tas"
+tasks.getByName("eclipse").group = "tas"
+tasks.getByName("jar").group = "tas"
+tasks.getByName("run").group = "tas"
+tasks.getByName("javadoc").group = "tas"
+tasks.getByName("wrapper").group = "tas"
+tasks.getByName("publishToMavenLocal").group = "tas"
