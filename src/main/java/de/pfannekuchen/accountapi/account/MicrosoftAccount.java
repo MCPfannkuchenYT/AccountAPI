@@ -1,4 +1,4 @@
-package de.pfannekuchen.accountapi;
+package de.pfannekuchen.accountapi.account;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,20 +8,17 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
+import de.pfannekuchen.accountapi.account.MCAccount;
 import de.pfannekuchen.accountapi.utils.Utils;
 
 /**
  * This is an Implementation of the Microsoft Minecraft Account
  * @author Pancake
  */
-public final class MicrosoftAccount {
+public final class MicrosoftAccount extends MCAccount {
 
 	/** Cached Access Token for Microsoft Account */
 	private final String refreshToken;
-	
-	private final String accessToken;
-	private final String username;
-	private final UUID uuid;
 	private final boolean ownsMinecraft;
 	
 	/**
@@ -126,20 +123,6 @@ public final class MicrosoftAccount {
 		this.refreshToken = account;
 		System.out.println(account);
 	}
-	
-	/* Getters */
-	
-	public final String getAccessToken() {
-		return accessToken;
-	}
-
-	public final String getUsername() {
-		return username;
-	}
-
-	public final UUID getUuid() {
-		return uuid;
-	}
 
 	public final boolean ownsMinecraft() {
 		return ownsMinecraft;
@@ -149,39 +132,12 @@ public final class MicrosoftAccount {
 		return refreshToken;
 	}
 
-	
-	/* General Java Stuff */
-	
 	/**
 	 * Clones a Minecraft Account without Connecting to a Server again
 	 */
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
 		return new MicrosoftAccount(accessToken, username, uuid, ownsMinecraft, refreshToken);
-	}
-
-	/**
-	 * Create a Hash of the Player UUID
-	 */
-	@Override
-	public int hashCode() {
-		return uuid.hashCode();
-	}
-	
-	/**
-	 * Check whether two Accounts are equal
-	 */
-	@Override
-	public boolean equals(Object o) {
-		return o.hashCode() == hashCode();
-	}
-	
-	/**
-	 * To String support because why not
-	 */
-	@Override
-	public String toString() {
-		return uuid.toString();
 	}
 	
 }

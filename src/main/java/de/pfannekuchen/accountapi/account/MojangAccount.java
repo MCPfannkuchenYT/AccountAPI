@@ -1,4 +1,4 @@
-package de.pfannekuchen.accountapi;
+package de.pfannekuchen.accountapi.account;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -9,14 +9,10 @@ import de.pfannekuchen.accountapi.utils.Utils;
  * This is an Implementation of the old Mojang Minecraft Account
  * @author Pancake
  */
-public final class MojangAccount {
+public final class MojangAccount extends MCAccount {
 	
 	/** UUID for specific Account */
 	private final UUID clientUuid;
-	
-	private final String accessToken;
-	private final String username;
-	private final UUID uuid;
 	
 	/**
 	 * Create a Mojang Account via Email And Password.
@@ -83,25 +79,9 @@ public final class MojangAccount {
 		this.uuid = uuid;
 	}
 	
-	/* Getters */
-	
-	public final String getAccessToken() {
-		return accessToken;
-	}
-
-	public final String getUsername() {
-		return username;
-	}
-
-	public final UUID getUuid() {
-		return uuid;
-	}
-	
 	public UUID getClientUuid() {
 		return clientUuid;
 	}
-	
-	/* General Java Stuff */
 	
 	/**
 	 * Clones a Minecraft Account without Connecting to a Server again
@@ -109,30 +89,6 @@ public final class MojangAccount {
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
 		return new MojangAccount(getClientUuid(), accessToken, username, uuid);
-	}
-	
-	/**
-	 * Create a Hash of the Player UUID
-	 */
-	@Override
-	public int hashCode() {
-		return uuid.hashCode();
-	}
-	
-	/**
-	 * Check whether two Accounts are equal
-	 */
-	@Override
-	public boolean equals(Object o) {
-		return o.hashCode() == hashCode();
-	}
-	
-	/**
-	 * To String support because why not
-	 */
-	@Override
-	public String toString() {
-		return uuid.toString();
 	}
 	
 }
