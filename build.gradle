@@ -32,7 +32,6 @@ project.getAllTasks(true).each { key, val ->
 	}	
 }
 tasks.getByName("build").group = "tas"
-tasks.getByName("eclipse").group = "tas"
 tasks.getByName("jar").group = "tas"
 tasks.getByName("run").group = "tas"
 tasks.getByName("javadoc").group = "tas"

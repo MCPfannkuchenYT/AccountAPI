@@ -1,4 +1,4 @@
-package de.pfannekuchen.accountapi.account;
+package de.pfannekuchen.accountapi;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -6,7 +6,7 @@ import java.util.UUID;
  * Header for Minecraft Accounts
  * @author Pancake
  */
-abstract class MCAccount {
+public abstract class MCAccount {
 
 	protected String accessToken;
 	protected String username;

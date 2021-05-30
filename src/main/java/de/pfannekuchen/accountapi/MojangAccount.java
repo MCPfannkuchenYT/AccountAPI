@@ -1,8 +1,9 @@
-package de.pfannekuchen.accountapi.account;
+package de.pfannekuchen.accountapi;
 
 import java.io.IOException;
 import java.util.UUID;
 
+import de.pfannekuchen.accountapi.account.MCAccount;
 import de.pfannekuchen.accountapi.utils.Utils;
 
 /**
