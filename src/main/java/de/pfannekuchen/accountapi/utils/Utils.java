@@ -4,11 +4,14 @@ import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpRequest.Builder;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -24,44 +27,37 @@ public final class Utils {
 	 * @param isPost Whether Payload should be send or not
 	 * @param headers Additional Headers for the Connection
 	 * @return Returns the recieved JSON from the Server
-	 * @throws IOException Something went wrong or the Server responded with an Error
+	 * @throws Exception Something went wrong or the Server responded with an Error
 	 */
-	public static final String sendAndRecieveJson(final String url, final String payload, final boolean isPost, final String... headers) throws IOException {
+	public static final String sendAndRecieveJson(final String url, final String payload, final boolean isPost, final String... headers) throws Exception {
+		System.setProperty("jdk.tls.client.protocols", "TLSv1.2");
 		/* Open a Connection to the Server */
 		final URL authServer = new URL(url);
-		final HttpURLConnection con = (HttpURLConnection) authServer.openConnection();
+		final HttpClient client = HttpClient.newHttpClient();
+		final Builder con = HttpRequest.newBuilder(authServer.toURI());
 		
 		/* Set Headers*/
-		if (isPost) con.setRequestMethod("POST");
-		else con.setRequestMethod("GET");
-		if (payload != null) con.setRequestProperty("Content-Type", "application/json; utf-8");
+		if (payload != null) con.setHeader("Content-Type", "application/json; utf-8");
 		else {
-			con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; utf-8");
-			con.setRequestProperty("Content-Length", "0");
+			con.setHeader("Content-Type", "application/x-www-form-urlencoded; utf-8");
 		}
-		con.setRequestProperty("Accept", "application/json");
-		for (int i = 0; i < headers.length; i += 2) con.setRequestProperty(headers[i], headers[i + 1]);
-		con.setDoOutput(true);
+		con.setHeader("Accept", "application/json");
+		for (int i = 0; i < headers.length; i += 2) con.setHeader(headers[i], headers[i + 1]);
 		
 		/* Send Payload */
 		if (isPost) {
 			if (payload != null) {
 				// Send the JSON Object as Payload
-				try(final OutputStream os = con.getOutputStream()) {
-					final byte[] input = payload.getBytes("utf-8");
-				    os.write(input, 0, input.length);			
-				}
+				con.POST(BodyPublishers.ofByteArray(payload.getBytes("utf-8")));
 			} else {
-				// Split the URL to payload (which is after the ?) and send taht
-				try(final OutputStream os = con.getOutputStream()) {
-					final byte[] input = url.split("\\?", 2)[1].getBytes(StandardCharsets.UTF_8);
-				    os.write(input, 0, input.length);			
-				}
+				// Split the URL to payload (which is after the ?) and send that
+				con.POST(BodyPublishers.ofByteArray(url.split("\\?", 2)[1].getBytes(StandardCharsets.UTF_8)));
 			}
 		}
 		
+		HttpRequest request = con.build();
 		/* Read Input from Connection and parse to Json */
-		try(final BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"))) {
+		try(final BufferedReader br = new BufferedReader(new InputStreamReader(client.send(request, HttpResponse.BodyHandlers.ofInputStream()).body(), "utf-8"))) {
 			String response = "";
 			String responseLine = null;
 			while ((responseLine = br.readLine()) != null) {
@@ -101,21 +97,21 @@ public final class Utils {
 	/**
 	 * Check README.md
 	 */
-	public static final String getXBLToken(final String accessToken) throws IOException {
+	public static final String getXBLToken(final String accessToken) throws Exception {
         return sendAndRecieveJson("https://user.auth.xboxlive.com/user/authenticate", "{'Properties':{'AuthMethod':'RPS','SiteName':'user.auth.xboxlive.com','RpsTicket':'d=%TOKEN%'},'RelyingParty':'http://auth.xboxlive.com','TokenType':'JWT'}".replace("'", "\"").replaceAll("%TOKEN%", accessToken), true, "x-xbl-contract-version", "1").split("Token\"")[1].split("\"")[1];
 	}
 	
 	/**
 	 * Check README.md
 	 */
-	public static final String getXSTSToken(final String xblToken) throws IOException {
+	public static final String getXSTSToken(final String xblToken) throws Exception {
         return sendAndRecieveJson("https://xsts.auth.xboxlive.com/xsts/authorize", "{'Properties':{'SandboxId':'RETAIL','UserTokens':['%XBL%']},'RelyingParty':'rp://api.minecraftservices.com/','TokenType':'JWT'}".replace("'", "\"").replaceAll("%XBL%", xblToken), true, "x-xbl-contract-version", "1");
 	}
 	
 	/**
 	 * Check README.md
 	 */
-	public static final String getAccessToken(final String xstsToken, final String hash) throws IOException {
+	public static final String getAccessToken(final String xstsToken, final String hash) throws Exception {
         return sendAndRecieveJson("https://api.minecraftservices.com/authentication/login_with_xbox", "{\"identityToken\":\"XBL3.0 x=" + hash + ";" + xstsToken + "\"}", true).split("access_token\"")[1].split("\"")[1];
 	}
 	

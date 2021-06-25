@@ -1,7 +1,6 @@
 package de.pfannekuchen.accountapi;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -100,7 +99,7 @@ public final class MicrosoftAccount extends MCAccount {
 	 * Obtain Access Token, used from Constructors only
 	 * @return Access Token of Minecraft Account
 	 */
-	private final String login(final String localAccountToken) throws IOException {
+	private final String login(final String localAccountToken) throws Exception {
 		final String xblToken = Utils.getXBLToken(localAccountToken);
 	    final String xstsTokenJson = Utils.getXSTSToken(xblToken);
 
