@@ -4,8 +4,10 @@ import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +15,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -35,20 +36,20 @@ public final class Utils {
 	 */
 	public static final String sendGet(final String url, final String... headers) throws Exception {
 		/* Open a Connection to the Server */
-		CloseableHttpClient httpclient = HttpClients.createDefault();
-		final HttpGet client = new HttpGet(url);
-		
-		/* Set Headers*/
-		client.setHeader("Content-Type", "application/x-www-form-urlencoded; utf-8");
-		client.setHeader("Accept", "application/json");
+		final URL authServer = new URL(url);
+		final HttpURLConnection con = (HttpURLConnection) authServer.openConnection();
+
+		/* Set Headers */
+		con.setRequestMethod("GET");
+		con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; utf-8");
+		con.setRequestProperty("Content-Length", "0");
+		con.setRequestProperty("Accept", "application/json");
 		for (int i = 0; i < headers.length; i += 2)
-			client.setHeader(headers[i], headers[i + 1]);
-		
-		CloseableHttpResponse request = httpclient.execute(client);
-		HttpEntity entity1 = request.getEntity();
-		
+			con.setRequestProperty(headers[i], headers[i + 1]);
+		con.setDoOutput(true);
+
 		/* Read Input from Connection and parse to Json */
-		try(final BufferedReader br = new BufferedReader(new InputStreamReader(entity1.getContent()))) {
+		try (final BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"))) {
 			String response = "";
 			String responseLine = null;
 			while ((responseLine = br.readLine()) != null) {
