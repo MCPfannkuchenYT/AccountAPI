@@ -57,7 +57,7 @@ public final class MicrosoftAccount extends MCAccount {
         socket.close();
         
         /* Checking Game Ownership */
-        final String ownershipJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/entitlements/mcstore", null, false, "Authorization", "Bearer " + accessToken);
+        final String ownershipJson = Utils.sendGet("https://api.minecraftservices.com/entitlements/mcstore", "Authorization", "Bearer " + accessToken);
         ownsMinecraft = !ownershipJson.replaceAll(" ", "").contains("[]");
         if (!ownsMinecraft) {
         	uuid = null;
@@ -66,7 +66,7 @@ public final class MicrosoftAccount extends MCAccount {
         }
         
         /* Checking the Profile */
-        final String profileJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/minecraft/profile", null, false, "Authorization", "Bearer " + accessToken);
+        final String profileJson = Utils.sendGet("https://api.minecraftservices.com/minecraft/profile", "Authorization", "Bearer " + accessToken);
         uuid = UUID.fromString(profileJson.split("id\"")[1].split("\"")[1].replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
         username = profileJson.split("name\"")[1].split("\"")[1];
 	}
@@ -81,7 +81,7 @@ public final class MicrosoftAccount extends MCAccount {
 		this.accessToken = login(this.refreshToken);
 		
         /* Checking Game Ownership */
-        final String ownershipJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/entitlements/mcstore", null, false, "Authorization", "Bearer " + accessToken);
+        final String ownershipJson = Utils.sendGet("https://api.minecraftservices.com/entitlements/mcstore", "Authorization", "Bearer " + accessToken);
         ownsMinecraft = !ownershipJson.replaceAll(" ", "").contains("[]");
         if (!ownsMinecraft) {
         	uuid = null;
@@ -90,7 +90,7 @@ public final class MicrosoftAccount extends MCAccount {
         }
         
         /* Checking the Profile */
-        final String profileJson = Utils.sendAndRecieveJson("https://api.minecraftservices.com/minecraft/profile", null, false, "Authorization", "Bearer " + accessToken);
+        final String profileJson = Utils.sendGet("https://api.minecraftservices.com/minecraft/profile", "Authorization", "Bearer " + accessToken);
         uuid = UUID.fromString(profileJson.split("id\"")[1].split("\"")[1].replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
         username = profileJson.split("name\"")[1].split("\"")[1];
 	}

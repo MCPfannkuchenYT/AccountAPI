@@ -31,7 +31,7 @@ public final class MojangAccount extends MCAccount {
 		/* Send Payload and Recieve new one */
 		String response = null;
 		try {
-			response = Utils.sendAndRecieveJson("https://authserver.mojang.com/authenticate", payload, true);
+			response = Utils.sendPost2("https://authserver.mojang.com/authenticate", payload);
 			if (response.contains("error")) throw new Exception(response);
 		} catch (final IOException e) {
 			System.err.println("Could not create Mojang Account.");
@@ -56,7 +56,7 @@ public final class MojangAccount extends MCAccount {
 		/* Send Payload and Recieve new one */
 		String response = null;
 		try {
-			response = Utils.sendAndRecieveJson("https://authserver.mojang.com/refresh", payload, true);
+			response = Utils.sendPost2("https://authserver.mojang.com/refresh", payload);
 			if (response.contains("error")) throw new Exception(response);
 		} catch (final IOException e) {
 			System.err.println("Could not refresh Mojang Account.");
